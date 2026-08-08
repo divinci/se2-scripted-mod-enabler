@@ -1,87 +1,112 @@
 # SE2 Scripted Mod Enabler
 
-Makes C# script mods work in **Space Engineers 2** on a normal Steam install — no launch
-arguments, no editing config by hand, no launcher to remember. Install once, press Play.
+C# script mods do not work in Space Engineers 2 out of the box. This turns them on.
 
-> **Status: pre-release.** The mechanism works and is covered by tests, but it has only
-> been run on one machine and one game build. The friendly point-and-click installer is
-> not written yet; right now there is a command-line tool. See
-> [docs/spike-log.md](docs/spike-log.md) for exactly what has and has not been proven.
+Install it once, then press Play in Steam. You do not need launch arguments, config
+edits, a launcher or an injector.
 
-## Why this exists
+## Status: pre-release
 
-C# scripting is in the shipping game, but switched off. Turning it on needs a launch
-argument (`-loadScripts`), and even with it the game **crashes while building its own
-script whitelist** before it compiles anything. So a player who subscribes to a script mod
-gets, at best, a mod that silently does nothing.
+The method works, and unit tests cover it. But it has only run on one machine, against
+one game build. There is no point-and-click installer yet, so you install it from a
+command line.
 
-Neither problem is the mod author's to fix and neither is something a player should have
-to know about. This closes both.
+[docs/spike-log.md](docs/spike-log.md) lists every claim this repo makes. It says which
+ones someone has watched happen, and which are still unproven.
+
+## Why you need it
+
+C# scripting ships inside the game, switched off. Two things stop you using it:
+
+- turning it on needs a launch argument, `-loadScripts`
+- even with that argument, the game crashes while it builds its own script whitelist
+
+The crash comes before the game compiles any mod code. So a player who subscribes to a
+script mod gets a mod that does nothing at all.
+
+Neither problem belongs to the mod author. Neither is something a player should have to
+know about. This fixes both.
 
 ## What it does
 
-1. Registers scripting at startup, in place of `-loadScripts`.
-2. Repairs the duplicate whitelist anchor that otherwise crashes the world load.
+The enabler is a plugin, which is a small file the game loads when it starts. It does two
+things:
 
-It hooks in by appending one path to `DEV_PLUGINS` in
-`Game2/SpaceEngineers2.runtimeconfig.json` — a list the game already reads on startup. No
-launcher, no injector, no replaced game files. The plugin itself lives in
-`%LOCALAPPDATA%\SE2ScriptedModEnabler\`, outside the game folder, so a Steam *Verify
-integrity* cannot delete it.
+- registers scripting, in place of the `-loadScripts` argument
+- repairs the duplicate whitelist entry that crashes the world load
 
-## What it does when the game updates
+### What it changes on your disk
 
-**Nothing at all** — and that is the feature.
+It adds one path to a list called `DEV_PLUGINS`. That list lives in the game's
+`Game2/SpaceEngineers2.runtimeconfig.json` file, and the game already reads it at
+startup. Nothing else in the game folder changes.
 
-The plugin has a compiled-in list of the game builds it has been tested against. On any
-other build it logs one line and returns, and the game runs exactly as if it were not
-installed. There is no way to widen that list at runtime: not an environment variable, not
-a config file, not a flag. Widening it takes a new release, which means someone has looked
-at the new build first.
-
-That matters more than it sounds. The game calls the plugin's constructor with no
-`try`/`catch` around it, so anything thrown there does not break *the mod* — it breaks
-*the game*, for everyone who installed this, with no clue why. A version gate that could
-be talked into running on an untested build would be no gate at all.
+The plugin file itself sits in `%LOCALAPPDATA%\SE2ScriptedModEnabler\`. That is outside
+the game folder, so Steam's *Verify integrity of game files* cannot delete it.
 
 ## Install
 
-Needs the [.NET 9 SDK](https://dotnet.microsoft.com/download) for now.
+You need Space Engineers 2 and the [.NET 9 SDK](https://dotnet.microsoft.com/download).
 
 ```bash
 git clone https://github.com/divinci/se2-scripted-mod-enabler
 cd se2-scripted-mod-enabler
 
-./tools/build-plugin.sh              # needs Space Engineers 2 installed
+export SE2_GAMEDIR=/mnt/s/steam/steamapps/common/SpaceEngineers2/Game2
+./tools/build-plugin.sh
 dotnet run --project src/smesetup -- install
 ```
 
-Then launch the game from Steam as usual.
+Set `SE2_GAMEDIR` to your own `Game2` folder. The build reads the game's own files, so it
+stops with an error if that path is wrong.
+
+Then start the game from Steam as usual.
+
+## Check it worked
 
 ```bash
 dotnet run --project src/smesetup -- status
 ```
 
 ```
-Working. Script mods are enabled.
+Working: Working (build 2.3.0.2798). Script mods will load.
 
   game           S:\steam\steamapps\common\SpaceEngineers2\Game2
   steam buildid  24225481
+  install dir    C:\Users\you\AppData\Local\SE2ScriptedModEnabler
   plugin         C:\Users\you\AppData\Local\SE2ScriptedModEnabler\SE2ScriptedModEnabler.dll
   registered     yes
-  last run       working — build 2.3.0.2798
+  DEV_PLUGINS:
+    ..\Game2.ContentBuilder\Game2.ContentBuilder.csproj
+    C:\Users\you\AppData\Local\SE2ScriptedModEnabler\SE2ScriptedModEnabler.dll
+
+  last run: working at 2026-08-08T22:41:07Z
+  game build     2.3.0.2798
+  supported      2.3.0.2798
 ```
 
-`status` is the thing to read when something looks wrong; it reports one of:
+Read `status` first whenever something looks wrong. It reports one of these:
 
-| | |
+| Status | What it means |
 |---|---|
-| `working` | scripting registered, whitelist repaired |
-| `paused` | the game updated to a build this release has not been tested on. Update the enabler |
-| `neverRan` | installed, but the game has not been started since |
-| `missingDll` | registered, but the plugin file is gone. Run `install` again |
-| `degraded` | ran, but something expected was not found. Details in the notes |
-| `failed` | the plugin threw and caught itself. The game was unaffected |
+| `Working` | Script mods will load. |
+| `NeverRan` | Installed. Start the game once to confirm it works. |
+| `Armed` | The plugin started, but the game never finished starting up. Launch it again. |
+| `Paused` | The game updated to a build this release has not been tested on. Update the enabler. |
+| `Degraded` | Partly working. Something the plugin expected was not there, so read the notes. |
+| `Failed` | The plugin hit an error and stood down. The game still ran. |
+| `NotInstalled` | Not installed. Script mods will not load. |
+| `MissingDll` | Registered, but the plugin file is gone. Run `install` again. |
+| `UnsafeDir` | Another file ending in `.dll` is in the plugin folder. Remove it before you start the game. |
+| `OptedOut` | Switched off by `-noSme` or `SE2SME_DISABLE=1`. |
+| `GameNotFound` | The tool could not find Space Engineers 2. Point at it with `--game-dir`. |
+
+The `--json` output uses these same names in camelCase, such as `neverRan`.
+
+## Switch it off without uninstalling
+
+Add `-noSme` to the game's Steam launch options, or set `SE2SME_DISABLE=1`. The plugin
+still loads, does nothing, and the game runs as though you had never installed it.
 
 ## Uninstall
 
@@ -89,56 +114,51 @@ Working. Script mods are enabled.
 dotnet run --project src/smesetup -- uninstall
 ```
 
-`runtimeconfig.json` goes back to **byte-for-byte** what Keen shipped — same line endings,
-same indentation, same absent trailing newline — and the install folder is removed. The
-edit is a splice by byte offset rather than a JSON round trip, precisely so this is
-possible; re-serialising the document would rewrite the whole file and make an exact
-restore impossible.
+This puts `runtimeconfig.json` back to exactly what Keen shipped. The line endings, the
+indentation and the missing final newline all match, byte for byte. It then deletes the
+install folder.
 
-If something else has added its own `DEV_PLUGINS` entry in the meantime, that entry is
-left alone. Uninstall removes our segment; it does not restore a backup over the top of
-someone else's work.
+The tool cuts its own entry out of that file by position, rather than rewriting the file
+as JSON. Rewriting the whole document would change parts of it we never touched.
 
-## For developers
+Another tool may have added a `DEV_PLUGINS` entry of its own. Uninstall leaves that entry
+alone and removes only ours. It never restores a backup over someone else's work.
 
-```bash
-./tools/build-plugin.sh                          # needs the game; sets $GAMEDIR from SE2_GAMEDIR
-dotnet test tests/SE2ScriptedModEnabler.Setup.Tests
-./tools/frame-proof.sh                           # T10, no game needed
-./tools/spike-run.sh                             # list the in-game test steps
-```
+## When the game updates
 
-| | |
+The enabler does nothing at all, on purpose.
+
+The plugin carries a built-in list of the game builds it has been tested against. This
+release lists one: `2.3.0.2798`. On any other build the plugin writes one line to its log
+and stops. The game then runs exactly as it would without it, and `status` reports
+`Paused`.
+
+You cannot widen that list yourself. No environment variable, config file or flag will do
+it. Widening it takes a new release, so someone has looked at the new build first.
+
+The reason is blunt. The game calls the plugin with no error handling around it. If the
+plugin throws an error, it does not break the mod. It breaks the game, for everyone who
+installed this, with no clue why.
+
+## Command reference
+
+| Command | What it does |
 |---|---|
-| `src/SE2ScriptedModEnabler/` | the plugin. One DLL, no dependencies |
-| `src/SE2ScriptedModEnabler.Setup/` | installer engine. UI-free, no game references, unit-testable |
-| `src/smesetup/` | command-line front end |
-| `tests/FrameProof/` | T10's harness — deliberately built against an assembly that is then deleted |
-| `docs/spike-log.md` | every claim, and whether it has actually been observed |
+| `status` | Reports what is installed, and whether the last run worked |
+| `install` | Copies the plugin in and registers it |
+| `uninstall` | Removes our entry and our files |
+| `repair` | Installs again over the top, which is safe to repeat |
 
-### The rule the plugin is built around
+| Option | What it does |
+|---|---|
+| `--game-dir PATH` | The `Game2` folder, or the folder above it |
+| `--install-dir PATH` | Where the plugin file lives, required off Windows |
+| `--plugin PATH` | The built `SE2ScriptedModEnabler.dll` to copy in |
+| `--dry-run` | Says what would happen, and writes nothing |
+| `--json` | Prints the same information as JSON |
 
-The JIT resolves a method's type references when it compiles that method. So a
-`try`/`catch` **cannot** catch a `TypeLoadException` caused by its own body — the `try`
-has to be one frame up, and the callee has to be `[MethodImpl(NoInlining)]` or the
-compiler may collapse the two frames and quietly undo it. Resolution is also per-method,
-not per-statement: a reference on a branch that never executes is resolved anyway.
-
-That is not folklore; `./tools/frame-proof.sh` demonstrates all three against a genuinely
-missing assembly in about a second.
-
-Two consequences run through the code:
-
-- Only four game types appear at compile time — `IPlugin`, `PluginHost`, `EngineBuilder`
-  and `Log`. Everything else goes through `GameBridge` by reflection, where a Keen rename
-  becomes a logged line instead of a crash.
-- `BuildGate` names no game type at all, so the "is this build supported?" question stays
-  answerable on a build where everything else has moved.
-
-`PluginSurfaceTests` checks both against the compiled IL rather than trusting the comments
-— including that every method touching a game type carries `NoInlining`. Without it the
-discipline rots the first time someone adds a helper, and nothing about ordinary C# makes
-moving a line between two methods look dangerous.
+Exit codes are `0` for success, `1` for failure and `2` for bad usage. `status` returns
+`1` unless it reports `Working`.
 
 ## Licence
 
