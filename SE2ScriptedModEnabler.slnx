@@ -1,0 +1,18 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="SE2ScriptedModEnabler.xml" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/ClientPlugin/ClientPlugin.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/PluginSurface/PluginSurface.csproj" />
+  </Folder>
+  <Folder Name="/tests/GameStubs/">
+    <Project Path="tests/GameStubs/Game2.Simulation/Game2.Simulation.csproj" />
+    <Project Path="tests/GameStubs/SpaceEngineers2/SpaceEngineers2.csproj" />
+    <Project Path="tests/GameStubs/VRage.Core/VRage.Core.csproj" />
+    <Project Path="tests/GameStubs/VRage.DCS/VRage.DCS.csproj" />
+    <Project Path="tests/GameStubs/VRage.Library/VRage.Library.csproj" />
+  </Folder>
+</Solution>

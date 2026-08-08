@@ -1,0 +1,75 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Two SDKs on purpose. The guard build below compiles at LangVersion 14, which needs
+      # the .NET 10 toolchain; everything targets net9.0 and needs the 9 runtime to run.
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            9.0.x
+            10.0.x
+
+      # No runner has Space Engineers 2, so ClientPlugin builds against the hand-written
+      # ABI stubs in tests/GameStubs. That is the whole reason those projects exist: the IL
+      # suite used to skip itself here, which looks identical to passing.
+      - name: Build
+        run: dotnet build SE2ScriptedModEnabler.slnx -c Release --nologo
+
+      - name: Test
+        run: >
+          dotnet test tests/PluginSurface -c Release --nologo
+          --logger "trx;LogFileName=results.trx" --results-directory artifacts
+
+      # The reason for the trx above. A suite that skipped everything reports success, and
+      # the tests being skipped here are the ones enforcing every fail-closed claim the
+      # design rests on. Assert on the counters instead of trusting the exit code.
+      - name: Assert nothing skipped
+        run: |
+          counters=$(grep -o '<Counters[^>]*>' artifacts/results.trx)
+          echo "$counters"
+          get() { echo "$counters" | grep -o "$1=\"[0-9]*\"" | grep -o '[0-9]*'; }
+          [ "$(get total)" -gt 0 ]        || { echo "::error::no tests ran at all"; exit 1; }
+          [ "$(get notExecuted)" = "0" ]  || { echo "::error::$(get notExecuted) test(s) skipped"; exit 1; }
+
+      # Pulsar compiles src/ClientPlugin/*.cs itself, on the player's machine, and never
+      # reads the csproj. These are its Roslyn settings verbatim: nullable off, C# 14, TRACE
+      # and NETCOREAPP defined, no implicit usings. A warning here is a warning a hub
+      # reviewer sees on a submission, so all of them are errors.
+      #
+      # The one this exists for is CS8632 — an annotation outside a #nullable context. Every
+      # file in src/ClientPlugin/ opens with #nullable enable precisely so the annotations
+      # survive a compile that has it switched off. Delete one of those headers and this
+      # step, and only this step, goes red.
+      - name: Guard build with Pulsar's compile settings
+        run: >
+          dotnet build src/ClientPlugin/ClientPlugin.csproj -c Release --nologo
+          -p:Nullable=disable
+          -p:LangVersion=14
+          '-p:DefineConstants=TRACE%3BNETCOREAPP'
+          -p:ImplicitUsings=disable
+          -p:TreatWarningsAsErrors=true
+
+      # A committed bin/ is the one thing a hub reviewer rejects on sight, and it is easy to
+      # do by accident — the plugin is distributed as source, so anything binary in the
+      # index is either a mistake or something to explain.
+      - name: No build output in the index
+        run: |
+          if git ls-files | grep -E '(^|/)(bin|obj)/'; then
+            echo "::error::build output is tracked"; exit 1
+          fi

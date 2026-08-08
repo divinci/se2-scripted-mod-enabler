@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<PluginData xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="GitHubPlugin">
+    <Id>E821F26E-D52C-496B-86AA-5F50F98BE4EE</Id>
+    <RepoId>divinci/se2-scripted-mod-enabler</RepoId>
+    <FriendlyName>Scripted Mod Enabler</FriendlyName>
+    <Author>divinci</Author>
+    <Tooltip>Lets C# script mods run without the -loadScripts launch option, and fixes the duplicate whitelist entry that stops those worlds loading.</Tooltip>
+    <Description>Space Engineers 2 can run mods that contain C# scripts, but two things get in the way. Scripting is only switched on by the -loadScripts launch option, and when it is on, a duplicate entry in the script whitelist aborts the world load with "The namespace Keen.Game2.Client is already allowed".
+
+This plugin does both jobs at startup: it registers scripting the same way the launch option would, and drops the duplicate whitelist entry. Subscribe to a script mod and load your world; nothing else to set up. If scripting is already on, the plugin leaves it alone.
+
+After a game update, Pulsar rebuilds this plugin from source against the game you actually have. If it no longer fits, it does not build, and Pulsar switches it off and tells you. So an update either leaves the plugin working or leaves you without it, never with a game that will not start.
+</Description>
+    <SourceDirectories>
+        <Directory>src/ClientPlugin</Directory>
+    </SourceDirectories>
+    <Commit>bd482449a46110cd13fafe09cf61329bacd8d929</Commit>
+</PluginData>

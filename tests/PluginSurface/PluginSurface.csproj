@@ -1,0 +1,52 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Runs anywhere, including CI on a machine with no Space Engineers 2: the plugin is
+    built against tests/GameStubs by the ProjectReference below, so the IL these tests
+    read always exists. The price is that the stubs can drift, and the only guard is a
+    rerun with SME_PLUGIN_DLL pointed at a GAMEDIR build before a release.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <!-- Development happens under WSL where only the net10 runtime is installed. -->
+    <RollForward>Major</RollForward>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.0.1" />
+    <!-- Reads IL out of the built plugin. MetadataLoadContext can see signatures but not
+         method bodies, and some of these claims are about what a body does. -->
+    <PackageReference Include="Mono.Cecil" Version="0.11.6" />
+    <!-- The same parser Pulsar scans plugin sources with, so PublicizerSeamTests can be
+         its InspectSource rather than an approximation of it. -->
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Builds the plugin in stub mode as a side effect, which is how PluginAssembly finds
+         something to read. ReferenceOutputAssembly=false because these tests inspect the
+         dll as a file, and a compile-time reference would also drag the plugin's output
+         next to the tests where PulsarSeamTests could load the wrong copy. -->
+    <ProjectReference Include="../../src/ClientPlugin/ClientPlugin.csproj" ReferenceOutputAssembly="false" />
+    <!-- Copied local, unlike everywhere else: PulsarSeamTests loads the plugin for real,
+         so every assembly it references has to resolve in this process. -->
+    <ProjectReference Include="../GameStubs/VRage.Core/VRage.Core.csproj" />
+    <ProjectReference Include="../GameStubs/VRage.Library/VRage.Library.csproj" />
+    <ProjectReference Include="../GameStubs/VRage.DCS/VRage.DCS.csproj" />
+    <ProjectReference Include="../GameStubs/Game2.Simulation/Game2.Simulation.csproj" />
+    <ProjectReference Include="../GameStubs/SpaceEngineers2/SpaceEngineers2.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+</Project>

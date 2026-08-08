@@ -1,0 +1,19 @@
+# Build output. The workflow fails if any of this reaches the index: the plugin is
+# distributed as source, so anything binary here is either a mistake or something a hub
+# reviewer will ask about.
+bin/
+obj/
+artifacts/
+*.trx
+
+# Editors
+.vs/
+.idea/
+.vscode/
+*.user
+*.suo
+*.DotSettings.user
+
+# OS
+.DS_Store
+Thumbs.db

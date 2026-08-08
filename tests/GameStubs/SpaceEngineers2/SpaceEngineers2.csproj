@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The assembly name has to match the real one exactly:
+       PluginSurfaceTests asserts on the emitted AssemblyRef names. -->
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <AssemblyName>SpaceEngineers2</AssemblyName>
+    <RootNamespace>Keen.Game2</RootNamespace>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <!-- The real assembly is unsigned and unversioned in any way we depend on. -->
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../VRage.Core/VRage.Core.csproj" />
+    <ProjectReference Include="../VRage.Library/VRage.Library.csproj" />
+    <ProjectReference Include="../VRage.DCS/VRage.DCS.csproj" />
+    <ProjectReference Include="../Game2.Simulation/Game2.Simulation.csproj" />
+  </ItemGroup>
+
+</Project>

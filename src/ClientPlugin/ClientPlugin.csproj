@@ -1,0 +1,84 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    NOT WHAT SHIPS. Pulsar compiles src/ClientPlugin/**.cs itself, with Roslyn, on the
+    player's machine, and never reads a csproj. This exists so a human and CI can build
+    the same sources locally, and so it has to stay compatible with Pulsar's settings:
+    nullable off, C# 14, TRACE;NETCOREAPP, no implicit usings. The workflow's guard build
+    is what enforces that.
+
+      dotnet build src/ClientPlugin -p:GAMEDIR=/path/to/Game2   real game assemblies
+      dotnet build src/ClientPlugin                             tests/GameStubs
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <AssemblyName>SE2ScriptedModEnabler</AssemblyName>
+    <RootNamespace>SE2ScriptedModEnabler</RootNamespace>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <!-- The game process has already loaded these; copying them next to the plugin risks
+         Assembly.LoadFrom binding a second, conflicting copy. -->
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+    <!-- Separate trees so a stub build can never be mistaken for a real one. -->
+    <BaseOutputPath Condition="'$(GAMEDIR)' != ''">bin/real/</BaseOutputPath>
+    <BaseOutputPath Condition="'$(GAMEDIR)' == ''">bin/stub/</BaseOutputPath>
+  </PropertyGroup>
+
+  <!--
+    The same set Pulsar hands Roslyn, narrowed to what this actually names. Pulsar's own
+    list is a glob (SpaceEngineers2.dll, VRage*.dll, Game2*.dll — Modern/References.cs), so
+    it is strictly wider; nothing here can compile there and fail.
+
+    VRage.Scripting is the odd one out: no type from it appears in this source. It is here
+    because GameWhitelistProvider<T> implements IScriptWhitelistProvider, and a base
+    interface Roslyn cannot resolve is not a failure mode worth discovering on a release
+    day. Being unused, it emits no assembly reference either way.
+  -->
+  <ItemGroup Condition="'$(GAMEDIR)' != ''">
+    <Reference Include="VRage.Core">        <HintPath>$(GAMEDIR)/VRage.Core.dll</HintPath>        <Private>false</Private></Reference>
+    <Reference Include="VRage.Library">     <HintPath>$(GAMEDIR)/VRage.Library.dll</HintPath>     <Private>false</Private></Reference>
+    <Reference Include="VRage.DCS">         <HintPath>$(GAMEDIR)/VRage.DCS.dll</HintPath>         <Private>false</Private></Reference>
+    <Reference Include="VRage.Scripting">   <HintPath>$(GAMEDIR)/VRage.Scripting.dll</HintPath>   <Private>false</Private></Reference>
+    <Reference Include="Game2.Simulation">  <HintPath>$(GAMEDIR)/Game2.Simulation.dll</HintPath>  <Private>false</Private></Reference>
+    <Reference Include="SpaceEngineers2">   <HintPath>$(GAMEDIR)/SpaceEngineers2.dll</HintPath>   <Private>false</Private></Reference>
+  </ItemGroup>
+
+  <!--
+    Roslyn does not implement IgnoresAccessChecksTo, so the attribute in AssemblyInfo.cs
+    only buys us the runtime half. Pulsar covers the compile-time half by rewriting the
+    reference with Cecil before Roslyn sees it (Compiler/Publicizer.cs). This is the local
+    stand-in for that pass — and it is the reason a GAMEDIR build needs a NuGet restore
+    when nothing else here does.
+
+    Caveat worth knowing before you debug it: SpaceEngineers2.dll is mixed-mode, which
+    Pulsar handles explicitly (ModuleAttributes.ILOnly) and this package is not documented
+    to. If a GAMEDIR build ever fails inside the publicizer, that is the first thing to
+    look at; it says nothing about the Pulsar build, which is the one that ships.
+  -->
+  <PropertyGroup Condition="'$(GAMEDIR)' != ''">
+    <!-- Both runtime strategies are on by default and one of them emits its own
+         IgnoresAccessChecksToAttribute, which would collide with the declaration in
+         AssemblyInfo.cs (CS0101). That declaration has to stay: it is what Pulsar scans
+         for. So take the other strategy and let our own attribute do the runtime work. -->
+    <PublicizerRuntimeStrategies>Unsafe</PublicizerRuntimeStrategies>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(GAMEDIR)' != ''">
+    <PackageReference Include="Krafs.Publicizer" Version="2.3.2" PrivateAssets="all" />
+    <!-- Kept in step with AssemblyInfo.cs by hand; PluginSurfaceTests checks the attribute
+         but cannot see this file from the stub build. -->
+    <Publicize Include="SpaceEngineers2" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(GAMEDIR)' == ''">
+    <!-- Private=false so bin/stub holds exactly one dll — the one the IL tests are about. -->
+    <ProjectReference Include="../../tests/GameStubs/VRage.Core/VRage.Core.csproj"             Private="false" />
+    <ProjectReference Include="../../tests/GameStubs/VRage.Library/VRage.Library.csproj"       Private="false" />
+    <ProjectReference Include="../../tests/GameStubs/VRage.DCS/VRage.DCS.csproj"               Private="false" />
+    <ProjectReference Include="../../tests/GameStubs/Game2.Simulation/Game2.Simulation.csproj" Private="false" />
+    <ProjectReference Include="../../tests/GameStubs/SpaceEngineers2/SpaceEngineers2.csproj"   Private="false" />
+  </ItemGroup>
+
+</Project>
