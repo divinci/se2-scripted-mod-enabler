@@ -1,146 +1,164 @@
 # SE2 Scripted Mod Enabler
 
-C# script mods do not work in Space Engineers 2 out of the box. This turns them on.
+Some Space Engineers 2 mods need to run a little code to do their job. The game will not
+let them. This fixes that.
 
-Install it once, then press Play in Steam. You do not need launch arguments, config
-edits, a launcher or an injector.
+You set it up once. After that you just press Play, like always.
 
-## Status: pre-release
+## Do I need it?
 
-The method works, and unit tests cover it. But it has only run on one machine, against
-one game build. There is no point-and-click installer yet, so you install it from a
-command line.
+You need it if any of this sounds like you:
 
-[docs/spike-log.md](docs/spike-log.md) lists every claim this repo makes. It says which
-ones someone has watched happen, and which are still unproven.
+- you subscribed to a mod, switched it on, and nothing happened
+- a mod's page says it needs "scripts" or "scripting"
+- you make mods, and you want other people to be able to use yours
 
-## Why you need it
+You do not need it for mods that only add blocks, paint, sounds or parts. Those already
+work.
 
-C# scripting ships inside the game, switched off. Two things stop you using it:
+## Please read this bit
 
-- turning it on needs a launch argument, `-loadScripts`
-- even with that argument, the game crashes while it builds its own script whitelist
+This is an early version, and we will not pretend otherwise.
 
-The crash comes before the game compiles any mod code. So a player who subscribes to a
-script mod gets a mod that does nothing at all.
+- There is no proper installer yet. You set it up by pasting a few lines into a Windows
+  tool called PowerShell. We give you the exact lines to paste.
+- It has only ever been tried on one PC, with one version of the game.
+- It is easy to undo. There is a "Remove it" section further down.
 
-Neither problem belongs to the mod author. Neither is something a player should have to
-know about. This fixes both.
+If that sounds like more bother than it is worth, that is fair enough. Come back when
+there is a proper installer.
 
-## What it does
+## What it puts on your PC
 
-The enabler is a plugin, which is a small file the game loads when it starts. It does two
-things:
+Two small things:
 
-- registers scripting, in place of the `-loadScripts` argument
-- repairs the duplicate whitelist entry that crashes the world load
+- one file, tucked away in your own AppData folder, where programs keep their bits and
+  pieces
+- one extra line in one of the game's own settings files
 
-### What it changes on your disk
+That is the lot. It does not change the game itself. It never goes online. It only does
+anything during the few seconds while the game is starting up.
 
-It adds one path to a list called `DEV_PLUGINS`. That list lives in the game's
-`Game2/SpaceEngineers2.runtimeconfig.json` file, and the game already reads it at
-startup. Nothing else in the game folder changes.
+Remove it and that line goes back exactly as it was, down to the last character.
 
-The plugin file itself sits in `%LOCALAPPDATA%\SE2ScriptedModEnabler\`. That is outside
-the game folder, so Steam's *Verify integrity of game files* cannot delete it.
+## Set it up
 
-## Install
+First you need two things:
 
-You need Space Engineers 2 and the [.NET 9 SDK](https://dotnet.microsoft.com/download).
+1. Space Engineers 2, installed through Steam.
+2. A free Microsoft download called the [.NET 9 SDK](https://dotnet.microsoft.com/download).
+   It is the tool that builds the fix on your PC.
 
-```bash
-git clone https://github.com/divinci/se2-scripted-mod-enabler
-cd se2-scripted-mod-enabler
+Now find your game folder. In Steam, right-click Space Engineers 2 and choose *Manage*,
+then *Browse local files*. A window opens. Go into the folder called `Game2` and copy the
+address from the bar along the top. It will look something like this:
 
-export SE2_GAMEDIR=/mnt/s/steam/steamapps/common/SpaceEngineers2/Game2
-./tools/build-plugin.sh
-dotnet run --project src/smesetup -- install
+```
+C:\Program Files (x86)\Steam\steamapps\common\SpaceEngineers2\Game2
 ```
 
-Set `SE2_GAMEDIR` to your own `Game2` folder. The build reads the game's own files, so it
-stops with an error if that path is wrong.
+Then do these four steps.
 
-Then start the game from Steam as usual.
+1. Get the files. Click the green *Code* button at the top of this page, choose *Download
+   ZIP*, and unzip it somewhere you can find again.
+2. Open PowerShell. Press the Windows key, type `powershell`, and press Enter.
+3. Paste the lines below one at a time, pressing Enter after each. Swap both folders in
+   quote marks for your own.
+4. Start the game from Steam as normal.
+
+```powershell
+cd "C:\Users\you\Downloads\se2-scripted-mod-enabler-main"
+
+dotnet build src\SE2ScriptedModEnabler\SE2ScriptedModEnabler.csproj -c Release -p:GAMEDIR="C:\Program Files (x86)\Steam\steamapps\common\SpaceEngineers2\Game2"
+
+dotnet run --project src\smesetup -- install
+```
 
 ## Check it worked
 
-```bash
-dotnet run --project src/smesetup -- status
+Paste this into the same PowerShell window:
+
+```powershell
+dotnet run --project src\smesetup -- status
 ```
+
+Look at the very first word it prints. If it says `Working`, you are done.
 
 ```
 Working: Working (build 2.3.0.2798). Script mods will load.
 
-  game           S:\steam\steamapps\common\SpaceEngineers2\Game2
+  game           C:\Program Files (x86)\Steam\steamapps\common\SpaceEngineers2\Game2
   steam buildid  24225481
   install dir    C:\Users\you\AppData\Local\SE2ScriptedModEnabler
   plugin         C:\Users\you\AppData\Local\SE2ScriptedModEnabler\SE2ScriptedModEnabler.dll
   registered     yes
-  DEV_PLUGINS:
-    ..\Game2.ContentBuilder\Game2.ContentBuilder.csproj
-    C:\Users\you\AppData\Local\SE2ScriptedModEnabler\SE2ScriptedModEnabler.dll
 
   last run: working at 2026-08-08T22:41:07Z
   game build     2.3.0.2798
   supported      2.3.0.2798
 ```
 
-Read `status` first whenever something looks wrong. It reports one of these:
+## If it says something else
 
-| Status | What it means |
+Find your word in the left column.
+
+| If it says | What to do |
 |---|---|
-| `Working` | Script mods will load. |
-| `NeverRan` | Installed. Start the game once to confirm it works. |
-| `Armed` | The plugin started, but the game never finished starting up. Launch it again. |
-| `Paused` | The game updated to a build this release has not been tested on. Update the enabler. |
-| `Degraded` | Partly working. Something the plugin expected was not there, so read the notes. |
-| `Failed` | The plugin hit an error and stood down. The game still ran. |
-| `NotInstalled` | Not installed. Script mods will not load. |
-| `MissingDll` | Registered, but the plugin file is gone. Run `install` again. |
-| `UnsafeDir` | Another file ending in `.dll` is in the plugin folder. Remove it before you start the game. |
-| `OptedOut` | Switched off by `-noSme` or `SE2SME_DISABLE=1`. |
-| `GameNotFound` | The tool could not find Space Engineers 2. Point at it with `--game-dir`. |
+| `Working` | Nothing. It is working. |
+| `NeverRan` | Start the game once, then check again. |
+| `Paused` | The game has had an update we have not caught up with yet. Wait for a new version of this. |
+| `NotInstalled` | Setup did not finish. Run the `install` line again. |
+| `MissingDll` | The fix's file has gone missing. Run the `install` line again. |
+| `GameNotFound` | It cannot find your game. Add `--game-dir "your Game2 folder"` to the end of the line. |
+| `UnsafeDir` | There are files in the fix's folder that should not be there. Delete them, then start the game. |
+| `Armed` | The game did not finish starting up last time. Launch it again. |
+| `Degraded` | It half worked. Read the notes it prints underneath. |
+| `Failed` | It hit a snag and switched itself off. Your game was fine. Read the notes. |
+| `OptedOut` | You switched it off yourself. See "Switch it off for a while" below. |
 
-The `--json` output uses these same names in camelCase, such as `neverRan`.
+Steam has a *Verify integrity of game files* button that repairs the game. It cannot
+delete the fix, because the fix does not live in the game's folder. It may undo that one
+settings line, though. If script mods stop working after you use that button, run the
+`install` line again.
 
-## Switch it off without uninstalling
+## Switch it off for a while
 
-Add `-noSme` to the game's Steam launch options, or set `SE2SME_DISABLE=1`. The plugin
-still loads, does nothing, and the game runs as though you had never installed it.
+You do not have to remove it. In Steam, right-click the game, choose *Properties*, and
+type `-noSme` into the launch options box.
 
-## Uninstall
+The fix then sits there doing nothing at all, and the game runs just as it did before.
+Take `-noSme` back out to switch it on again.
 
-```bash
-dotnet run --project src/smesetup -- uninstall
+## Remove it
+
+```powershell
+dotnet run --project src\smesetup -- uninstall
 ```
 
-This puts `runtimeconfig.json` back to exactly what Keen shipped. The line endings, the
-indentation and the missing final newline all match, byte for byte. It then deletes the
-install folder.
+That puts the game's settings file back to exactly how it arrived, then deletes the
+folder it made. Nothing of it is left behind.
 
-The tool cuts its own entry out of that file by position, rather than rewriting the file
-as JSON. Rewriting the whole document would change parts of it we never touched.
+If some other mod tool has added a line of its own to that file, this leaves that line
+alone. It only ever removes its own.
 
-Another tool may have added a `DEV_PLUGINS` entry of its own. Uninstall leaves that entry
-alone and removes only ours. It never restores a backup over someone else's work.
+## When the game gets an update
 
-## When the game updates
+The fix switches itself off and the game runs normally. That is on purpose.
 
-The enabler does nothing at all, on purpose.
+It only ever runs on versions of the game it has been tested on. Right now that is one
+version, the one it calls `2.3.0.2798`. On anything else it stands aside and does
+nothing, and `status` will say `Paused`.
 
-The plugin carries a built-in list of the game builds it has been tested against. This
-release lists one: `2.3.0.2798`. On any other build the plugin writes one line to its log
-and stops. The game then runs exactly as it would without it, and `status` reports
-`Paused`.
+Here is why it is so strict. The game gives the fix no safety net. If the fix goes wrong
+at the wrong moment, the game will not start at all. That would hit everybody who
+installed it, with nothing on screen to say why. Standing aside is always the safer
+answer.
 
-You cannot widen that list yourself. No environment variable, config file or flag will do
-it. Widening it takes a new release, so someone has looked at the new build first.
+So after a game update, come back here and look for a newer version.
 
-The reason is blunt. The game calls the plugin with no error handling around it. If the
-plugin throws an error, it does not break the mod. It breaks the game, for everyone who
-installed this, with no clue why.
+## The technical bits
 
-## Command reference
+You can skip this. It is here for people who want it.
 
 | Command | What it does |
 |---|---|
@@ -155,11 +173,20 @@ installed this, with no clue why.
 | `--install-dir PATH` | Where the plugin file lives, required off Windows |
 | `--plugin PATH` | The built `SE2ScriptedModEnabler.dll` to copy in |
 | `--dry-run` | Says what would happen, and writes nothing |
-| `--json` | Prints the same information as JSON |
+| `--json` | Prints the same information as JSON, with the statuses in camelCase |
 
 Exit codes are `0` for success, `1` for failure and `2` for bad usage. `status` returns
 `1` unless it reports `Working`.
 
+The fix is a VRage plugin. It registers scripting in place of the `-loadScripts` launch
+argument, and repairs a duplicate whitelist entry that otherwise crashes the world load.
+It hooks in through the `DEV_PLUGINS` list in the game's
+`Game2/SpaceEngineers2.runtimeconfig.json`, which the game already reads at startup.
+Uninstall splices that entry back out by byte offset, so the restore is exact.
+
+[docs/spike-log.md](docs/spike-log.md) lists every claim this repo makes, and says which
+ones someone has actually watched happen.
+
 ## Licence
 
-MIT.
+MIT. Do what you like with it.
