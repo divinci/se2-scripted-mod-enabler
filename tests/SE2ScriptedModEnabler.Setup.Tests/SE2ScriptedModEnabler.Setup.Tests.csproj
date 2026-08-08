@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Runs anywhere, including CI on a machine with no Space Engineers 2: the Setup
+    library has no game references, and the tests that inspect the built plugin skip
+    themselves when the DLL is not there (see GameBuiltFactAttribute).
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <!-- Development happens under WSL where only the net10 runtime is installed. -->
+    <RollForward>Major</RollForward>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.0.1" />
+    <!-- Reads IL out of the built plugin. MetadataLoadContext can see signatures but
+         not method bodies, and the frame-discipline rule is about what a body touches. -->
+    <PackageReference Include="Mono.Cecil" Version="0.11.6" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/SE2ScriptedModEnabler.Setup/SE2ScriptedModEnabler.Setup.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Verbatim copies of real files, byte for byte. .gitattributes marks them binary
+         so git cannot normalise the CRLFs the patcher is supposed to preserve. -->
+    <None Include="Fixtures/**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+</Project>

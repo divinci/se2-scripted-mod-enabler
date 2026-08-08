@@ -1,0 +1,25 @@
+{
+  "runtimeOptions": {
+    "tfm": "net9.0",
+    "frameworks": [
+      {
+        "name": "Microsoft.NETCore.App",
+        "version": "9.0.0"
+      },
+      {
+        "name": "Microsoft.WindowsDesktop.App",
+        "version": "9.0.0"
+      }
+    ],
+    "configProperties": {
+      "DEV_PLUGINS": "..\\Game2.ContentBuilder\\Game2.ContentBuilder.csproj",
+      "System.GC.RetainVM": true,
+      "System.GC.Concurrent": true,
+      "System.GC.Server": true,
+      "System.GC.DynamicAdaptationMode": 0,
+      "System.Reflection.Metadata.MetadataUpdater.IsSupported": false,
+      "System.Runtime.Serialization.EnableUnsafeBinaryFormatterSerialization": false,
+      "CSWINRT_USE_WINDOWS_UI_XAML_PROJECTIONS": false
+    }
+  }
+}

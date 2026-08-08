@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The VRage plugin (Keen.VRage.Core.Plugins.IPlugin) that makes C# script mods
+    work on a stock install: it registers scripting without -loadScripts and
+    repairs the duplicate Game2.Client whitelist anchor.
+
+    Built by tools/build-plugin.sh. GAMEDIR comes in as a property and points at
+    the game's Game2 folder.
+
+    The compile-time game surface is deliberately four types in two assemblies —
+    IPlugin, PluginHost, EngineBuilder, Log. Everything under Game2.* is reached
+    by reflection, so a Keen rename makes the plugin inert rather than stopping
+    the game from starting. PluginSurfaceTests enforces this; see docs/DESIGN.md.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <AssemblyName>SE2ScriptedModEnabler</AssemblyName>
+    <RootNamespace>SE2ScriptedModEnabler</RootNamespace>
+    <Version>0.1.0</Version>
+    <!-- The game process has already loaded these; copying them next to the
+         plugin risks Assembly.LoadFrom binding a second, conflicting copy via
+         PluginHost's AssemblyResolve fallback. -->
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+    <!-- The single source of truth is KnownBuilds.Stamps; this mirror exists so
+         the installer can read the allowlist with MetadataLoadContext without
+         loading a DLL that binds to game assemblies. KnownBuildsTests asserts
+         the two agree. -->
+    <SupportedBuilds>2.3.0.2798</SupportedBuilds>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AssemblyMetadata Include="SupportedBuilds" Value="$(SupportedBuilds)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="VRage.Core">    <HintPath>$(GAMEDIR)/VRage.Core.dll</HintPath>    <Private>false</Private></Reference>
+    <Reference Include="VRage.Library"> <HintPath>$(GAMEDIR)/VRage.Library.dll</HintPath> <Private>false</Private></Reference>
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,56 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      # Not `dotnet build se2sme.sln`. The plugin compiles against VRage.Core and
+      # VRage.Library out of the game folder, and no runner has Space Engineers 2
+      # installed. The installer and its tests deliberately have no game references, so
+      # they are exactly the part CI can prove.
+      - name: Build the installer
+        run: |
+          dotnet build src/SE2ScriptedModEnabler.Setup/SE2ScriptedModEnabler.Setup.csproj -c Release
+          dotnet build src/smesetup/smesetup.csproj -c Release
+
+      - name: Test
+        run: dotnet test tests/SE2ScriptedModEnabler.Setup.Tests/SE2ScriptedModEnabler.Setup.Tests.csproj -c Release
+
+      # PluginSurfaceTests skip themselves without a built plugin, so the run above is
+      # green whether or not they ran. That is the one thing worth being loud about:
+      # a skipped safety test looks exactly like a passing one in a summary.
+      - name: Note which tests could not run here
+        run: |
+          echo "PluginSurfaceTests need a built plugin, which needs the game installed."
+          echo "They are skipped on CI and must be run locally before a release:"
+          echo "  ./tools/build-plugin.sh && dotnet test tests/SE2ScriptedModEnabler.Setup.Tests"
+
+      # T10's core claim is pure runtime semantics and needs no game at all, so the one
+      # thing the whole fail-closed design rests on gets checked on every push.
+      - name: Frame proof
+        run: |
+          dotnet build tests/FrameProof/FrameProofHost/FrameProofHost.csproj -c Release
+          $out = "tests/FrameProof/FrameProofHost/bin/Release/net9.0"
+          if (-not (Test-Path "$out/FrameProofStub.dll")) {
+            throw "the stub was not copied next to the host - the probes would be vacuous"
+          }
+          Remove-Item "$out/FrameProofStub.dll"
+          & "$out/FrameProofHost.exe"
+          if ($LASTEXITCODE -ne 0) { throw "the frame rule did not hold" }

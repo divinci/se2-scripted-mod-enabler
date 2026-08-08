@@ -1,0 +1,57 @@
+"AppState"
+{
+	"appid"		"1133870"
+	"universe"		"1"
+	"LauncherPath"		"C:\\Program Files (x86)\\Steam\\steam.exe"
+	"name"		"Space Engineers 2"
+	"StateFlags"		"4"
+	"installdir"		"SpaceEngineers2"
+	"LastUpdated"		"1784536697"
+	"LastPlayed"		"1786215743"
+	"SizeOnDisk"		"76129006547"
+	"StagingSize"		"0"
+	"buildid"		"24225481"
+	"LastOwner"		"76561198873889400"
+	"DownloadType"		"2"
+	"UpdateResult"		"0"
+	"BytesToDownload"		"393168"
+	"BytesDownloaded"		"393168"
+	"BytesToStage"		"611435"
+	"BytesStaged"		"611435"
+	"TargetBuildID"		"0"
+	"AutoUpdateBehavior"		"1"
+	"AllowOtherDownloadsWhileRunning"		"0"
+	"ScheduledAutoUpdate"		"0"
+	"InstalledDepots"
+	{
+		"1133871"
+		{
+			"manifest"		"2434383322716142507"
+			"size"		"57382840040"
+		}
+		"3365540"
+		{
+			"manifest"		"8596405780546533701"
+			"size"		"18746166507"
+			"dlcappid"		"3365540"
+		}
+	}
+	"InstallScripts"
+	{
+		"1133871"		"redist\\installscript.vdf"
+	}
+	"SharedDepots"
+	{
+		"228989"		"228980"
+	}
+	"UserConfig"
+	{
+		"language"		"english"
+		"BetaKey"		"public"
+	}
+	"MountedConfig"
+	{
+		"language"		"english"
+		"BetaKey"		"public"
+	}
+}

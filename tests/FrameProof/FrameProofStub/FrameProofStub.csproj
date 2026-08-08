@@ -1,0 +1,21 @@
+<!--
+  A stand-in for a Keen assembly that a future SE2 update removes or renames.
+
+  Built, referenced, then deleted from the staging folder before the game launches, so
+  the plugin next to it has a hard reference to an assembly that is not there. That is
+  the only honest way to reproduce a JIT-time resolution failure; nothing you can write
+  in C# simulates it.
+
+  Not in se2sme.sln on purpose — the whole point is that it stops existing.
+-->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <AssemblyName>FrameProofStub</AssemblyName>
+    <RootNamespace>FrameProofStub</RootNamespace>
+  </PropertyGroup>
+
+</Project>

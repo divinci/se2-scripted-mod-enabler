@@ -1,0 +1,13 @@
+* text=auto
+*.sh text eol=lf
+*.cs text eol=lf
+*.csproj text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+
+# Last match wins, so this has to stay at the bottom.
+#
+# The patcher's whole job is preserving the exact bytes of a CRLF file that has no
+# trailing newline. If git normalised these fixtures on checkout, the tests proving
+# that would pass on one platform and fail on the other.
+tests/SE2ScriptedModEnabler.Setup.Tests/Fixtures/** -text

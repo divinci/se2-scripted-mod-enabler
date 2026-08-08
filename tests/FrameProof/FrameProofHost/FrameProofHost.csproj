@@ -1,0 +1,29 @@
+<!--
+  Runs the T10 probes with no game involved, so the frame rule can be checked in a
+  second on any machine instead of costing a launch.
+
+  Compiles Probes.cs directly rather than referencing FrameProof.dll: that assembly
+  names Keen types, and pulling those in would defeat the point of a host that needs
+  nothing installed.
+
+  Not in se2sme.sln — tools/frame-proof.sh deletes the stub it depends on, so an
+  ordinary solution build afterwards would fail.
+-->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <AssemblyName>FrameProofHost</AssemblyName>
+    <RootNamespace>FrameProof</RootNamespace>
+    <RollForward>Major</RollForward>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="../FrameProof/Probes.cs" Link="Probes.cs" />
+    <ProjectReference Include="../FrameProofStub/FrameProofStub.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The installer engine: find the game, edit runtimeconfig.json, report state.
+
+    No UI and no reference to any game assembly, so it builds and is testable in CI
+    on a machine that has never had Space Engineers 2 installed. The console front
+    end (src/smesetup) and, later, the WinForms shell are thin layers over this.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <AssemblyName>SE2ScriptedModEnabler.Setup</AssemblyName>
+    <RootNamespace>SE2ScriptedModEnabler.Setup</RootNamespace>
+    <Version>0.1.0</Version>
+  </PropertyGroup>
+
+</Project>

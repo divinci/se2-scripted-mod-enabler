@@ -1,0 +1,37 @@
+<!--
+  T10's harness: a throwaway plugin that binds a stub assembly which is then deleted.
+
+  Its job is to answer one question empirically — does a try/catch one frame up actually
+  catch a JIT-time resolution failure, and does NoInlining actually make the difference?
+  Every fail-closed claim in src/SE2ScriptedModEnabler/Plugin.cs rests on yes to both.
+
+  Not in se2sme.sln, and never shipped: tools/build-frame-proof.sh deletes the stub it
+  references, so an ordinary solution build after a run would fail.
+-->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <AssemblyName>FrameProof</AssemblyName>
+    <RootNamespace>FrameProof</RootNamespace>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../FrameProofStub/FrameProofStub.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="VRage.Core">
+      <HintPath>$(GAMEDIR)/VRage.Core.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="VRage.Library">
+      <HintPath>$(GAMEDIR)/VRage.Library.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+</Project>

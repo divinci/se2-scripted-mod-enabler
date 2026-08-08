@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Console front end over SE2ScriptedModEnabler.Setup, so the install logic can be
+    driven and inspected before there is any UI over it. The WinForms shell that ships
+    to players is a second front end over the same library, not a rewrite.
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <AssemblyName>smesetup</AssemblyName>
+    <RootNamespace>SE2ScriptedModEnabler.Cli</RootNamespace>
+    <Version>0.1.0</Version>
+    <!-- Runs from WSL against a net10 runtime during the spike; ships targeting the
+         runtime the player has. -->
+    <RollForward>Major</RollForward>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../SE2ScriptedModEnabler.Setup/SE2ScriptedModEnabler.Setup.csproj" />
+  </ItemGroup>
+
+</Project>
