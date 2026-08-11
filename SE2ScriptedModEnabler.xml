@@ -14,5 +14,5 @@ After a game update, Pulsar rebuilds this plugin from source against the game yo
     <SourceDirectories>
         <Directory>src/ClientPlugin</Directory>
     </SourceDirectories>
-    <Commit>bd482449a46110cd13fafe09cf61329bacd8d929</Commit>
+    <Commit>df8585314714960478245a851623346117f66df0</Commit>
 </PluginData>
